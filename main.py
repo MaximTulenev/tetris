@@ -3,14 +3,18 @@ from pygame.locals import *
 
 # цвета
 
-BLUE = (0, 0, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-YELLOW = (255, 255, 0)
-LIGHT_BLUE = (30, 30, 255)
-LIGHT_GREEN = (50, 255, 50)
-LIGHT_RED = (255, 30, 30)
-LIGHT_YELLOW = (255, 255, 30)
+# синий, зелёный, красный, жёлтый
+colors = [(0, 0, 255),
+          (0, 255, 0),
+          (255, 0, 0),
+          (255, 255, 0)]
+
+# порядок цветов тот же, что и в прошлом массиве, отличие в том, что здесь цвета светлые
+light_colors = [(30, 30, 255),
+                (50, 255, 50),
+                (255, 30, 30),
+                (255, 255, 30)]
+
 WHITE = (255, 255, 255)
 GRAY = (185, 185, 185)
 BLACK = (0, 0, 0)
@@ -18,8 +22,8 @@ BLACK = (0, 0, 0)
 brd_color = WHITE
 txt_color = WHITE
 bg_color = BLACK
-title_color = YELLOW
-info_color = BLUE
+title_color = colors[3]
+info_color = colors[0]
 
 # окно
 
@@ -270,5 +274,102 @@ def run_tetris():
 
 
 
-# другие функции
+# второстепенные функции
 
+def txt_object(text, font, color):
+    surf = font.render(text, True, color)
+    return surf, surf.get_rect()
+
+def stop_game():
+    return pygame.quit(), sys.exit()
+
+def check_keys():
+    quit.game()
+    for event in pygame.event.get():
+        if event.type == K_SPACE:
+            continue
+        return event.key
+    return None
+
+def show_text(text):
+    title_surf, title_rect = txt_objects(text, big_font, title_color)
+    title_rect.center = (int(window_W / 2) - 3, int(window_H / 2) - 3)
+    window_full.blit(title_surf, title_rect)
+
+    press_key_surf, press_key_rect = txt_objects('Нажмите пробел для продолжения', basic_font, title_color)
+    press_key_rect.center = (int(window_W / 2), int(window_H / 2) + 100)
+    window_full.blit(press_key_surf, press_key_rect)
+
+    def quit_game():
+        for event in pygame.event.get(QUIT):
+            stop_game()
+        for event in pygame.event.get(KEYUP):
+            if event.key == K_ESCAPE:
+                stop_game()
+            pygame.event.post(event)
+
+def calc_speed(score):
+    level = int(score / 10) + 1
+    fall_speed = 0.27 - (level * 0.02)
+    return level, fall_speed
+
+def get_new_fig():
+    shape = random.choise(list(figures.keys()))
+    new_figure = {'shape': shape,
+                  'rotation': random.randint(0, len(figures[shape]) - 1),
+                  'x': int(cup_W / 2) - int(fig_h / 2),
+                  'y': -2,
+                  'color': random.randint(0, len(colors) - 1)}
+    return new_figure
+
+def add_to_cup(cup, fig):
+    for x in range(fig_w):
+        for y in range(fig_h):
+            if figures[fig['shape']][fig['rotation']][y][x] != empty:
+                cup[x + fig['x']][y + fig['y']] = fig['color']
+
+def empty_cup():
+    cup = []
+    for i in range(cup_W):
+        cup.append([empty] * cup_H)
+    return cup
+
+def in_cup(x, y):
+    return x >= 0 and x < cup_W and y < cup_H
+
+def check_position(cup, fig, adjX=0, adjY=0):
+    for x in range(fig_w):
+        for y in range(fig_h):
+            above_cup = y + fig['y'] + adjY < 0
+            if above_cup or figures[fig['shape']][fig['rotation']][y][x] == empty:
+                continue
+            if not in_cup(x + fig['x'] + adjX, y + fig['y'] + adjY):
+                return False
+            if cup[x + fig['x'] + adjX][y + fig['y'] + adjY] != empty:
+                return False
+    return True
+
+def clear_completed(cup):
+    removed_lines = 0
+    y = cup_H - 1
+    while y >= 0:
+        if is_completed(cup, y):
+            for push_down_y in range(y, 0, -1):
+                for x in range(cup_W):
+                    cup[x][0] = empty
+                removed_lines += 1
+            else:
+                y -= 1
+    return removed_lines
+
+def convert_coordinates(block_x, block_y):
+    return (side_margin + (block_x * block)), (top_margin + (block_y * block))
+
+def draw_block(block_x, block_y, color, pixel_x=None, pixel_y=None):
+    if color == empty:
+        return
+    if pixel_x == None and pixel_y == None:
+        pixel_x, pixel_y = convert_coordinates(block_x, block_y)
+    pygame.draw.rect(window_full, colors[color], (pixel_x + 1, pixel_y + 1, block - 1, block - 1), 0, 3)
+    pygame.draw.rect(window_full, light_colors[color], (pixel_x + 1, pixel_y + 1, block - 4, block - 4), 0, 3)
+    pygame.draw.rect(window_full, colors[color], (pixel_x + block / 2, pixel_y + block / 2), 5)
