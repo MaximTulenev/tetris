@@ -41,9 +41,9 @@ top_margin = int((window_H - cup_H * block))
 side_move = 0.15
 down_move = 0.1
 
-window_line_1 = pygame.draw.line(window_full, WHITE, (side_margin, window_H), (side_margin, window_H - top_margin * 2), 2),
-window_line_2 = pygame.draw.line(window_full, WHITE, (side_margin + cup_W * block, window_H - top_margin * 2), (side_margin + cup_W * block, window_H), 2)
-window_line_3 = pygame.draw.line(window_full, WHITE, (side_margin, window_H - top_margin * 2), (side_margin + cup_W * block, window_H - top_margin * 2), 2)
+# window_line_1 = pygame.draw.line(window_full, WHITE, (side_margin, window_H), (side_margin, window_H - top_margin * 2), 2),
+# window_line_2 = pygame.draw.line(window_full, WHITE, (side_margin + cup_W * block, window_H - top_margin * 2), (side_margin + cup_W * block, window_H), 2)
+# window_line_3 = pygame.draw.line(window_full, WHITE, (side_margin, window_H - top_margin * 2), (side_margin + cup_W * block, window_H - top_margin * 2), 2)
 
 # шаблоны фигур
 
@@ -164,7 +164,7 @@ def main():
     big_font = pygame.font.SysFont('verdana', 45)
     show_text('TETRIS')
     while True:
-        pygame.display.update()
+        # pygame.display.update()
         global fps
         fps = 25
         pygame.time.Clock()
@@ -188,7 +188,8 @@ def run_tetris():
     going_right = False
     score = 0
     level, fall_speed = calc_speed(score)
-    falling_fig, next_fig = get_new_fig()
+    falling_fig = get_new_fig()
+    next_fig = get_new_fig()
 
     while True:
         if falling_fig == None:
@@ -269,6 +270,7 @@ def run_tetris():
         draw_next_fig(next_fig)
         if falling_fig != None:
             draw_fig(falling_fig)
+        pygame.display.update()
         fps_clock.tick(fps)
 
 
@@ -276,7 +278,7 @@ def run_tetris():
 
 # второстепенные функции
 
-def txt_object(text, font, color):
+def txt_objects(text, font, color):
     surf = font.render(text, True, color)
     return surf, surf.get_rect()
 
@@ -300,13 +302,13 @@ def show_text(text):
     press_key_rect.center = (int(window_W / 2), int(window_H / 2) + 100)
     window_full.blit(press_key_surf, press_key_rect)
 
-    def quit_game():
-        for event in pygame.event.get(QUIT):
+def quit_game():
+    for event in pygame.event.get(QUIT):
+        stop_game()
+    for event in pygame.event.get(KEYUP):
+        if event.key == K_ESCAPE:
             stop_game()
-        for event in pygame.event.get(KEYUP):
-            if event.key == K_ESCAPE:
-                stop_game()
-            pygame.event.post(event)
+        pygame.event.post(event)
 
 def calc_speed(score):
     level = int(score / 10) + 1
@@ -314,7 +316,7 @@ def calc_speed(score):
     return level, fall_speed
 
 def get_new_fig():
-    shape = random.choise(list(figures.keys()))
+    shape = random.choice(list(figures.keys()))
     new_figure = {'shape': shape,
                   'rotation': random.randint(0, len(figures[shape]) - 1),
                   'x': int(cup_W / 2) - int(fig_h / 2),
@@ -349,6 +351,12 @@ def check_position(cup, fig, adjX=0, adjY=0):
                 return False
     return True
 
+def is_completed(cup, y):
+    for x in range(cup_W):
+        if cup[x][y] == empty:
+            return False
+        return True
+
 def clear_completed(cup):
     removed_lines = 0
     y = cup_H - 1
@@ -365,11 +373,62 @@ def clear_completed(cup):
 def convert_coordinates(block_x, block_y):
     return (side_margin + (block_x * block)), (top_margin + (block_y * block))
 
-def draw_block(block_x, block_y, color, pixel_x=None, pixel_y=None):
+def draw_block(block_x, block_y, color, pixelx=None, pixely=None):
     if color == empty:
         return
-    if pixel_x == None and pixel_y == None:
-        pixel_x, pixel_y = convert_coordinates(block_x, block_y)
-    pygame.draw.rect(window_full, colors[color], (pixel_x + 1, pixel_y + 1, block - 1, block - 1), 0, 3)
-    pygame.draw.rect(window_full, light_colors[color], (pixel_x + 1, pixel_y + 1, block - 4, block - 4), 0, 3)
-    pygame.draw.rect(window_full, colors[color], (pixel_x + block / 2, pixel_y + block / 2), 5)
+    if pixelx == None and pixely == None:
+        pixelx, pixel_y = convert_coordinates(block_x, block_y)
+    pygame.draw.rect(window_full, colors[color], (pixelx + 1, pixely + 1, block - 1, block - 1), 0, 3)
+    pygame.draw.rect(window_full, light_colors[color], (pixelx + 1, pixely + 1, block - 4, block - 4), 0, 3)
+    pygame.draw.rect(window_full, colors[color], (pixelx + block / 2, pixely + block / 2), 5)
+
+def gamecup(cup):
+    pygame.draw.rect(window_full, brd_color, (side_margin - 4, top_margin - 4, (cup_W * block) + 8, (cup_H * block) + 8), 5)
+    pygame.draw.rect(window_full, bg_color, (side_margin, top_margin, block * cup_W, block * cup_H))
+    for x in range(cup_W):
+        for y in range(cup_H):
+            draw_block(x, y, cup[x][y])
+
+def draw_title():
+    title_surf = big_font.render('ТЕТРИС', True, title_color)
+    title_rect = title_surf.get_rect()
+    title_rect.topleft = (window_W - 425, 30)
+    window_full.blit(title_surf, title_rect)
+
+def draw_info(score, level):
+    score_surf = basic_font.render(f'Баллы: {score}', True, txt_color)
+    score_rect = score_surf.get_rect()
+    score_rect.topleft = (window_W - 550, 180)
+    window_full.blit(score_surf, score_rect)
+
+    level_surf = basic_font.render(f'Уровень: {level}', True, txt_color)
+    level_rect = level_surf.get_rect()
+    level_rect.topleft = (window_W - 550, 250)
+    window_full.blit(level_surf, level_rect)
+
+    pause_surf = basic_font.render(f'Пауза - пробел', True, info_color)
+    pause_rect = pause_surf.get_rect()
+    pause_rect.topleft = (window_W - 550, 420)
+    window_full.blit(pause_surf, pause_rect)
+
+    escb_surf = basic_font.render(f'Выход - Esc', True, info_color)
+    escb_rect = escb_surf.get_rect()
+    escb_rect.topleft = (window_W - 550, 450)
+    window_full.blit(escb_surf, escb_rect)
+
+def draw_fig(fig, pixelx=None, pixely=None):
+    fig_to_draw = figures[fig['shape']][fig['rotation']]
+    if pixelx == None and pixely == None:
+        pixelx, pixely = convert_coordinates(fig['x'], fig['y'])
+    for x in range(fig_w):
+        for y in range(fig_h):
+            if fig_to_draw[y][x] != empty:
+                draw_block(None, None, fig['color'], pixelx + (x * block), pixely + (y * block))
+
+def draw_next_fig(fig):
+    next_surf = basic_font.render('Следующая: ', True, txt_color)
+    next_rect = next_surf.get_rect()
+    next_rect.topleft = (window_W - 150, 180)
+    draw_fig(fig, pixelx=window_W-150, pixely=230)
+
+main()
