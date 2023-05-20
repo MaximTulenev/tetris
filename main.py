@@ -8,7 +8,7 @@ window_h = 500
 block = 20
 cup_h, cup_w = 20, 10
 
-side_freq, down_freq = 0.15, 0.1  # передвижение в сторону и вниз
+side_freq, down_freq = 0.15, 0.1
 
 side_margin = (window_w - cup_w * block) / 2
 top_margin = window_h - (cup_h * block) - 5
@@ -123,7 +123,7 @@ figures = {'S': [['-----',
 
 def pause_screen():
     pause = pygame.Surface((600, 500), pygame.SRCALPHA)
-    pause.fill((0, 0, 255, 127))
+    pause.fill((0, 0, 0, 127))
     display_surf.blit(pause, (0, 0))
 
 
@@ -151,7 +151,7 @@ def run_tetris():
     going_left = False
     going_right = False
     score = 0
-    level, fall_speed = calc_speed(score)
+    fall_speed = calc_speed(score)
     falling_fig = get_new_fig()
     next_fig = get_new_fig()
 
@@ -233,7 +233,7 @@ def run_tetris():
             if not check_position(cup, falling_fig, adjY=1):  # проверка "приземления" фигуры
                 add_to_cup(cup, falling_fig)  # фигура приземлилась, добавляем ее в содержимое стакана
                 score += clear_completed(cup)
-                level, fall_speed = calc_speed(score)
+                fall_speed = calc_speed(score)
                 falling_fig = None
             else:  # фигура пока не приземлилась, продолжаем движение вниз
                 falling_fig['y'] += 1
@@ -243,7 +243,7 @@ def run_tetris():
         display_surf.fill(bg_color)
         draw_title()
         game_cup(cup)
-        draw_info(score, level)
+        draw_info(score)
         draw_next_fig(next_fig)
         if falling_fig != None:
             draw_fig(falling_fig)
@@ -296,9 +296,9 @@ def quit_game():
 
 def calc_speed(score):
     # вычисляет уровень
-    level = int(score / 10) + 1
-    fall_speed = 0.27 - (level * 0.02)
-    return level, fall_speed
+    # level = int(score / 10) + 1
+    fall_speed = 0.27
+    return fall_speed
 
 
 def get_new_fig():
@@ -403,16 +403,11 @@ def draw_title():
     display_surf.blit(title_surf, title_rect)
 
 
-def draw_info(score, level):
+def draw_info(score):
     score_surf = basic_font.render(f'Баллы: {score}', True, txt_color)
     score_rect = score_surf.get_rect()
     score_rect.topleft = (window_w - 550, 180)
     display_surf.blit(score_surf, score_rect)
-
-    level_surf = basic_font.render(f'Уровень: {level}', True, txt_color)
-    level_rect = level_surf.get_rect()
-    level_rect.topleft = (window_w - 550, 250)
-    display_surf.blit(level_surf, level_rect)
 
     pauseb_surf = basic_font.render('Пауза: пробел', True, info_color)
     pauseb_rect = pauseb_surf.get_rect()
@@ -445,5 +440,4 @@ def draw_next_fig(fig):  # превью следующей фигуры
     draw_fig(fig, pixelx=window_w - 150, pixely=230)
 
 
-if __name__ == '__main__':
-    main()
+main()
